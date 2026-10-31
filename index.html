@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>坐席奖金计算器</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#f2f5fa;color:#182337;font-family:Arial,"Microsoft YaHei",sans-serif}
+main{max-width:720px;margin:auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px #20334a18}
+header{background:#17365d;color:white;padding:24px}h1{margin:0 0 8px;font-size:24px}header p{margin:0;color:#dce8f5;font-size:14px}
+.content{padding:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+label{display:block;font-size:14px;font-weight:bold;margin-bottom:7px}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font-size:17px}
+small{display:block;color:#64748b;font-size:12px;margin-top:5px;line-height:1.5}
+.results{margin-top:22px;padding:18px;background:#eff6fc;border-radius:12px}
+.row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #d7e3ef;font-size:14px;gap:12px}
+.total{margin-top:14px;background:#17365d;color:white;padding:17px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+.total strong{font-size:25px}.buttons{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+button{border:0;padding:12px 17px;border-radius:9px;font-weight:bold;font-size:14px;cursor:pointer}
+.primary{background:#2167a5;color:white}.secondary{background:#e8edf4;color:#243449}
+.note{margin-top:18px;padding:13px;background:#fff8e8;border-left:4px solid #d8a43b;border-radius:6px;font-size:13px;line-height:1.8}
+footer{text-align:center;color:#8290a2;font-size:12px;padding:0 10px 20px}
+@media(max-width:540px){body{padding:9px}.content{padding:16px}.grid{grid-template-columns:1fr}header{padding:20px}}
+</style></head>
+<body><main>
+<header><h1>坐席奖金计算器</h1><p>填写业绩数据，自动计算系数和奖金。手机、电脑均可使用。</p></header>
+<div class="content">
+<div class="grid">
+<div><label>修复个数（个）</label><input id="repairs" type="number" min="0" step="1" value="10"><small>填写本期修复数量。</small></div>
+<div><label>本金出催率（直接输入数字）</label><input id="rate" type="number" min="0" max="100" step=".01" value="55"><small>输入 55 就代表 55%，不要输入 0.55。</small></div>
+<div><label>本金出催率基准值</label><input id="base" type="number" min=".000001" max="100" step=".01" value="43"><small>当前基准值为 43。</small></div>
+<div><label>临时激励系数</label><input id="incentive" type="number" min="0" step=".01" value="2"><small>当前暂定系数为 2。</small></div>
+<div><label>触达率系数</label><input id="touch" type="number" step=".0001" value="0"><small>暂时手动填写，待补充公司计算规则。</small></div>
+<div><label>合规扣罚合计（元）</label><input id="penalty" type="number" min="0" step=".01" value="0"><small>填写本期扣罚金额，单位人民币元。</small></div>
+</div>
+<section class="results" aria-live="polite">
+<h3 style="margin:0 0 12px">自动计算结果</h3>
+<div class="row"><span>本金出催率系数</span><b id="pc">1.5581</b></div>
+<div class="row"><span>触达率系数</span><b id="tc">0.0000</b></div>
+<div class="row"><span>两项系数合计</span><b id="sum">1.5581</b></div>
+<div class="row"><span>扣罚前奖金</span><b id="before">¥311.63</b></div>
+<div class="total"><span>坐席奖金</span><strong id="bonus">¥311.63</strong></div>
+</section>
+<div class="buttons"><button class="primary" id="reset">恢复默认数据</button><button class="secondary" id="copy">复制计算结果</button></div>
+<div class="note"><b>计算公式</b><br>
+本金出催率系数 = 1 + ((本金出催率 − 基准值) ÷ 基准值) × 临时激励系数<br>
+坐席奖金 = 20 × 修复个数 × (本金出催率系数 + 触达率系数) − 合规扣罚<br>
+<b>说明：</b>触达率系数目前按手动输入处理，因为尚未提供具体计算公式。请以公司最终规则为准。</div>
+</div><footer>计算在当前设备浏览器内完成，不会上传业绩数据。</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id), n=id=>Number($(id).value)||0;
+const f=x=>Number.isFinite(x)?x.toFixed(4):"—";
+const money=x=>Number.isFinite(x)?new Intl.NumberFormat("zh-CN",{style:"currency",currency:"CNY"}).format(x):"—";
+function calc(){
+ const r=n("repairs"),rate=n("rate"),base=n("base"),inc=n("incentive"),touch=n("touch"),pen=n("penalty");
+ if(base<=0||rate<0||rate>100||r<0||pen<0){["pc","tc","sum","before","bonus"].forEach(k=>$(k).textContent="请检查输入");return}
+ const p=1+((rate-base)/base)*inc,s=p+touch,before=20*r*s,bonus=before-pen;
+ $("pc").textContent=f(p);$("tc").textContent=f(touch);$("sum").textContent=f(s);$("before").textContent=money(before);$("bonus").textContent=money(bonus);
+}
+["repairs","rate","base","incentive","touch","penalty"].forEach(k=>$(k).addEventListener("input",calc));
+$("reset").onclick=()=>{Object.entries({repairs:10,rate:55,base:43,incentive:2,touch:0,penalty:0}).forEach(([k,v])=>$(k).value=v);calc()};
+$("copy").onclick=async()=>{const t=`坐席奖金计算结果\n修复个数：${$("repairs").value}\n本金出催率：${$("rate").value}%\n本金出催率系数：${$("pc").textContent}\n触达率系数：${$("tc").textContent}\n合规扣罚：${money(n("penalty"))}\n坐席奖金：${$("bonus").textContent}`;try{await navigator.clipboard.writeText(t);$("copy").textContent="已复制"}catch(e){$("copy").textContent="复制失败，请手动复制"}};
+calc();
+</script></body></html>
